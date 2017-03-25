@@ -1,0 +1,61 @@
+
+## load library
+library(leaflet)
+library(htmlwidgets)
+
+
+## read in Geo Data
+setwd('/Users/xiangyuqian/Downloads/R leaflet choropleth map')
+states <- geojsonio::geojson_read("pop_us_simple.geojson", what = "sp")
+
+class(states)
+names(states)
+
+
+## set the colour for choropleth map
+cut_offs <- as.numeric(quantile(states$median_age))
+bins <- c(0, cut_offs, Inf)
+pal <- colorBin("YlOrRd", domain = states$density, bins = bins)
+
+## set the label for choropleth map
+labels <- sprintf(
+  "<strong>%s</strong><br/>%.2f years old",
+  states$NAME10, states$median_age
+) %>% lapply(htmltools::HTML)
+
+#$$$$$$$$$$$$$$$$$$$$$$
+## create map
+#$$$$$$$$$$$$$$$$$$$$$$
+m <- 
+  # initialize the map
+  leaflet(states) %>%
+  setView(-96, 37.8, 4) %>%
+  addTiles() %>%
+  # add polygons (with highlights functions)
+  addPolygons(
+  fillColor = ~pal(median_age),
+  weight = 2,
+  opacity = 1,
+  color = "white",
+  dashArray = "3",
+  fillOpacity = 0.7,
+  # add highlight funcion
+  highlight = highlightOptions(
+    weight = 5,
+    color = "#666",
+    dashArray = "",
+    fillOpacity = 0.7,
+    bringToFront = TRUE),
+  # add labels
+  label = labels,
+  labelOptions = labelOptions(
+    style = list("font-weight" = "normal", padding = "3px 8px"),
+    textsize = "15px",
+    direction = "auto")
+  )
+print(m)
+
+
+## save the result in HTML file
+saveWidget(m, file = "choropleth_map.html")
+
